@@ -112,9 +112,9 @@ def main(args):
     train_size = len(train_ids)
     val_size = len(val_ids)
 
-    print("All ids = {}".format(total_size))
-    print("Train ids = {}".format(train_size))
-    print("Validation ids = {}".format(val_size))
+    print("Total size = {}".format(total_size))
+    print("Train size = {}".format(train_size))
+    print("Validation size = {}".format(val_size))
 
     # initialize the ids
     train_dataset = FeedbackPriceDataset(train_ids, inputs, label2idx)
@@ -136,8 +136,8 @@ def main(args):
     )
 
     # calcuation of steps and warmup steps
-    train_steps_per_epoch = np.ceil(train_size / args.batch_size)
-    val_steps_per_epoch = np.ceil(val_size / args.batch_size)
+    train_steps_per_epoch = int(np.ceil(train_size / args.batch_size))
+    val_steps_per_epoch = int(np.ceil(val_size / args.batch_size))
     total_steps = train_steps_per_epoch * args.epochs
     warmup_steps = int(args.warmup_ratio * total_steps)
 
