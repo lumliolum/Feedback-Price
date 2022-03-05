@@ -22,7 +22,7 @@ def read_file(directory, filename):
 
 
 # return the id and text containing for a directory
-def return_texts(directory, readonly=500):
+def return_texts(directory):
     texts = {}
     n_jobs = cpu_count()
     parallel = Parallel(n_jobs=n_jobs, backend="multiprocessing")

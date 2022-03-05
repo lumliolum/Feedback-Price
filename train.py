@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader
 from transformers import RobertaConfig, RobertaTokenizerFast, RobertaModel
 
 import utils
@@ -60,11 +61,12 @@ def main(args):
     print("Label to index = {}".format(label2idx))
 
     # read the directory
+    print("Reading the files from {} directory".format(args.train_dir))
     texts = utils.return_texts(args.train_dir)
     num_documents = len(os.listdir(args.train_dir))
 
     print("Number of documents found in directory = {}".format(num_documents))
-
+    print("Combining the read files with ground truth from csv")
     texts_mapping = utils.return_texts_mapping(texts, df)
 
     # initialize the tokenizer
@@ -147,6 +149,7 @@ def main(args):
     print("Initial Learning rate = {}".format(args.inital_learning_rate))
 
     # optimizer
+    print("Initializing the optimizer")
     optimizer = optim.Adam(model.parameters(), lr=args.inital_learning_rate, betas=(0.9, 0.98), eps=1e-9)
     optimizer.zero_grad()
 
@@ -169,6 +172,7 @@ def main(args):
     # source code : https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#LambdaLR
     # scheduler will have method called scheduler.get_lr which will give the last calculated lr
     # this can be used to log the learning rate.
+    print("Initializing the scheduler")
     scheduler = optim.lr_scheduler.LambdaLR(
         optimizer,
         lambda step: min((warmup_steps**2)/(step + 1), (step + 1)),
