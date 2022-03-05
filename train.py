@@ -2,6 +2,7 @@ import os
 import torch
 import datetime
 import numpy as np
+import pandas as pd
 import torch.nn as nn
 import torch.optim as optim
 from transformers import RobertaConfig, RobertaTokenizerFast, RobertaModel
@@ -56,7 +57,7 @@ def main(args):
     label2idx = {label: index for index, label in enumerate(labels)}
     idx2label = {index: label for index, label in enumerate(labels)}
     print("Number of labels = {}".format(len(labels)))
-    print(label2idx)
+    print("Label to index = {}".format(label2idx))
 
     # read the directory
     texts = utils.return_texts(args.train_dir)
@@ -214,4 +215,5 @@ def main(args):
 if __name__ == "__main__":
     parser = arguments.create_arguments()
     args = parser.parse_args()
+    print("Parsed Arguments = {}".format(args))
     main(args)
