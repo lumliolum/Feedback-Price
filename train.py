@@ -71,6 +71,7 @@ def main(args):
 
     # initialize the tokenizer
     # add_prefix_space is false by default
+    print("Initializing the {} tokenizer".format(args.model_name_or_path))
     tokenizer = RobertaTokenizerFast.from_pretrained(
         args.model_name_or_path,
         add_prefix_space=False
@@ -189,7 +190,7 @@ def main(args):
         print("*"*60)
         print("{}/{}".format(epoch + 1, args.epochs))
 
-        t1 = datetime.datetime()
+        t1 = datetime.datetime.now()
         # train
         train_loss = utils.train(
             model=model,
@@ -211,7 +212,7 @@ def main(args):
             steps=val_steps_per_epoch,
             verbose=True
         )
-        t2 = datetime.datetime()
+        t2 = datetime.datetime.now()
         timetaken = round((t2 - t1).total_seconds())
         print("time: {}, loss: {}, val loss: {}".format(timetaken, train_loss, val_loss))
 
