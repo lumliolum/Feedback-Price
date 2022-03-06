@@ -193,7 +193,7 @@ def evalute(model, loss_fn, dataloder, device, steps=None, verbose=True):
     with torch.no_grad():
         for batch, inputs in enumerate(dataloder):
             input_ids = inputs["input_ids"].long().to(device)
-            attention_mask = inputs["attenion_mask"].long().to(device)
+            attention_mask = inputs["attention_mask"].long().to(device)
             target = inputs["tags"].long().to(device)
             # output from linear layer
             logits = model.forward(input_ids, attention_mask)
@@ -232,7 +232,7 @@ def predict(model, dataloder, steps, verbose=True):
     with torch.no_grad():
         for batch, inputs in enumerate(dataloader):
             input_ids = inputs["input_ids"].long().to(device)
-            attention_mask = inputs["attenion_mask"].long().to(device)
+            attention_mask = inputs["attention_mask"].long().to(device)
             # output from linear layer
             logits = model.forward(input_ids, attention_mask)
 
