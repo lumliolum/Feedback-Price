@@ -204,7 +204,7 @@ def main(args):
         )
 
         # validation
-        val_loss = utils.evalute(
+        val_loss, val_preds, val_true = utils.evalute(
             model=model,
             loss_fn=loss_fn,
             dataloder=val_loader,
