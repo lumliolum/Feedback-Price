@@ -1,4 +1,5 @@
 import os
+import sys
 import tqdm
 import torch
 import numpy as np
@@ -113,16 +114,18 @@ def prepare_inputs(texts, texts_mapping, tokenizer):
 class MovingAverage:
     def __init__(self, name, rd=4):
         self.name = name
+        # avg value
         self.value = 0
+        self.sum = 0
         self.count = 0
         self.rd = rd
 
     def update(self, x):
-        self.value += x
+        self.sum += x
         self.count += 1
 
         # update self.value
-        self.value /= self.count
+        self.value = self.sum / self.count
         # round off the value
         self.value = round(self.value, self.rd)
 
@@ -175,7 +178,8 @@ def train(model, loss_fn, optimizer, scheduler, dataloder, device, steps=None, v
         # if verbose, then print to sys.stdout
         if verbose:
             out_log = "{}/{} {} = {}".format(batch + 1, steps, train_loss.name, train_loss.value)
-            print(out_log, end="\r")
+            sys.stdout.write(out_log + "\r")
+            sys.stdout.flush()
 
     # return the final loss value
     return train_loss.value
@@ -216,7 +220,8 @@ def evalute(model, loss_fn, dataloder, device, steps=None, verbose=True):
 
             if verbose:
                 out_log = "{}/{} {} = {}".format(batch + 1, steps, val_loss.name, val_loss.value)
-                print(out_log, end="\r")
+                sys.stdout.write(out_log + "\r")
+                sys.stdout.flush()
 
     # loss, prediction and ground truth
     return val_loss.value, preds, true
@@ -243,6 +248,7 @@ def predict(model, dataloder, steps, verbose=True):
 
             if verbose:
                 out_log = "{}/{}".format(batch + 1, steps)
-                print(out_log, end="\r")
+                sys.stdout.write(out_log + "\r")
+                sys.stdout.flush()
 
     return preds

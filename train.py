@@ -4,6 +4,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import torch.nn as nn
+from loguru import logger
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from transformers import RobertaConfig, RobertaTokenizerFast, RobertaModel
@@ -16,6 +17,7 @@ from collator import Collator
 
 
 def test_tokenization(tokenizer):
+    logger.success("Running the test tokenization function")
     # this function is written to test on small input string
     # how the tokenization and bies tags are generated
     # this is what I will do for every sample in the directory.
@@ -24,14 +26,14 @@ def test_tokenization(tokenizer):
     sentence = "Hello worldy people ok you know what! of coursey"
     tags = ["O", "L", "C", "C", "C", "C", "O", "M", "L"]
 
-    print("Running the tokenize to see the output tokens")
-    print("Tokens = {}", tokenizer.tokenize(sentence))
+    logger.success("Running the tokenize to see the output tokens")
+    logger.success("Tokens = {}".format(tokenizer.tokenize(sentence)))
 
     # this is main function where I am converting the sentence to ids, and aligning the
     # tags to bies schema.
     tokenized_sentence, bies_tags = utils.tokenize(sentence, tags, tokenizer)
-    print("Tokenized sentence = {}".format(tokenized_sentence))
-    print("Bies tags = {}".format(bies_tags))
+    logger.success("Tokenized sentence = {}".format(tokenized_sentence))
+    logger.success("Bies tags = {}".format(bies_tags))
 
 
 def main(args):
@@ -57,47 +59,48 @@ def main(args):
 
     label2idx = {label: index for index, label in enumerate(labels)}
     idx2label = {index: label for index, label in enumerate(labels)}
-    print("Number of labels = {}".format(len(labels)))
-    print("Label to index = {}".format(label2idx))
+    logger.success("Number of labels = {}".format(len(labels)))
+    logger.success("Label to index = {}".format(label2idx))
 
     # read the directory
-    print("Reading the files from {} directory".format(args.train_dir))
+    logger.success("Reading the files from {} directory".format(args.train_dir))
     texts = utils.return_texts(args.train_dir)
     num_documents = len(os.listdir(args.train_dir))
 
-    print("Number of documents found in directory = {}".format(num_documents))
-    print("Combining the read files with ground truth from csv")
+    logger.success("Number of documents found in directory = {}".format(num_documents))
+    logger.success("Combining the read files with ground truth from csv")
     texts_mapping = utils.return_texts_mapping(texts, df)
 
     # initialize the tokenizer
     # add_prefix_space is false by default
-    print("Initializing the {} tokenizer".format(args.model_name_or_path))
+    logger.success("Initializing the {} tokenizer".format(args.model_name_or_path))
     tokenizer = RobertaTokenizerFast.from_pretrained(
         args.model_name_or_path,
         add_prefix_space=False
     )
-    print("Special tokens")
-    print(dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids)))
+    logger.success("Special tokens")
+    logger.success(dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids)))
 
     # run the test tokenization function
     test_tokenization(tokenizer)
 
     # convert the texts to ids and also align the tags with bies schema
     # remember that all the data is loaded here only
+    logger.success("Running tokenizer on all inputs.")
     inputs = utils.prepare_inputs(texts, texts_mapping, tokenizer)
 
     # load the pretrained model
-    print("Initializing the config")
+    logger.success("Initializing the config")
     roberta_config = RobertaConfig.from_pretrained(args.model_name_or_path)
     # set in roberta config to output hidden states
     roberta_config.output_hidden_states = True
-    print("Initializing the {} as base model".format(args.model_name_or_path))
+    logger.success("Initializing the {} as base model".format(args.model_name_or_path))
     # while using like this, the model is set in evaluation by default.
     roberta_model = RobertaModel.from_pretrained(args.model_name_or_path, config=roberta_config)
-    print("Initializing the finetuing model using base model")
+    logger.success("Initializing the finetuing model using base model")
     model = FeedbackPriceModel(roberta_config, roberta_model, len(label2idx))
     model.to(device)
-    print("Model Initialization completed")
+    logger.success("Model Initialization completed")
 
     # splitting the data into train and validation
     ids = np.array(list(inputs.keys()))
@@ -112,9 +115,9 @@ def main(args):
     train_size = len(train_ids)
     val_size = len(val_ids)
 
-    print("Total size = {}".format(total_size))
-    print("Train size = {}".format(train_size))
-    print("Validation size = {}".format(val_size))
+    logger.success("Total size = {}".format(total_size))
+    logger.success("Train size = {}".format(train_size))
+    logger.success("Validation size = {}".format(val_size))
 
     # initialize the ids
     train_dataset = FeedbackPriceDataset(train_ids, inputs, label2idx)
@@ -141,16 +144,16 @@ def main(args):
     total_steps = train_steps_per_epoch * args.epochs
     warmup_steps = int(args.warmup_ratio * total_steps)
 
-    print("Train Steps per epoch = {}".format(train_steps_per_epoch))
-    print("Val Steps per epoch = {}".format(val_steps_per_epoch))
-    print("Total steps = {}".format(total_steps))
-    print("Warmpup steps = {}".format(warmup_steps))
+    logger.success("Train Steps per epoch = {}".format(train_steps_per_epoch))
+    logger.success("Val Steps per epoch = {}".format(val_steps_per_epoch))
+    logger.success("Total steps = {}".format(total_steps))
+    logger.success("Warmpup steps = {}".format(warmup_steps))
     # calculate initial learning rate.
     args.inital_learning_rate = args.max_learning_rate / warmup_steps
-    print("Initial Learning rate = {}".format(args.inital_learning_rate))
+    logger.success("Initial Learning rate = {}".format(args.inital_learning_rate))
 
     # optimizer
-    print("Initializing the optimizer")
+    logger.success("Initializing the optimizer")
     optimizer = optim.Adam(model.parameters(), lr=args.inital_learning_rate, betas=(0.9, 0.98), eps=1e-9)
     optimizer.zero_grad()
 
@@ -173,7 +176,7 @@ def main(args):
     # source code : https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#LambdaLR
     # scheduler will have method called scheduler.get_lr which will give the last calculated lr
     # this can be used to log the learning rate.
-    print("Initializing the scheduler")
+    logger.success("Initializing the scheduler")
     scheduler = optim.lr_scheduler.LambdaLR(
         optimizer,
         lambda step: min((warmup_steps**2)/(step + 1), (step + 1)),
@@ -187,8 +190,8 @@ def main(args):
 
     # training
     for epoch in range(args.epochs):
-        print("*"*60)
-        print("{}/{}".format(epoch + 1, args.epochs))
+        logger.success("*"*60)
+        logger.success("{}/{}".format(epoch + 1, args.epochs))
 
         t1 = datetime.datetime.now()
         # train
@@ -214,11 +217,16 @@ def main(args):
         )
         t2 = datetime.datetime.now()
         timetaken = round((t2 - t1).total_seconds())
-        print("time: {}, loss: {}, val loss: {}".format(timetaken, train_loss, val_loss))
+        logger.success("time: {}, loss: {}, val loss: {}".format(timetaken, train_loss, val_loss))
 
 
 if __name__ == "__main__":
+    # add the log file.
+    logger.add(
+        sink="run.log",
+        level="DEBUG",
+    )
     parser = arguments.create_arguments()
     args = parser.parse_args()
-    print("Parsed Arguments = {}".format(args))
+    logger.success("Parsed Arguments = {}".format(args))
     main(args)
