@@ -178,7 +178,7 @@ def main(args):
         optimizer,
         lambda step: min((warmup_steps**2)/(step + 1), (step + 1)),
         last_epoch=-1,
-        verbose=True
+        verbose=False
     )
 
     # loss function
