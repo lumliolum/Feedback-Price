@@ -215,7 +215,7 @@ def train(model, loss_fn, optimizer, scheduler, dataloder, device, steps=None, v
             if batch + 1 != steps:
                 sys.stdout.write(out_log + "\r")
             else:
-                sys.stdout.write(out_log)
+                sys.stdout.write(out_log + "\n")
 
             sys.stdout.flush()
 
@@ -255,7 +255,7 @@ def evaluate(model, loss_fn, dataloder, device, steps=None, verbose=True):
                 if batch + 1 != steps:
                     sys.stdout.write(out_log + "\r")
                 else:
-                    sys.stdout.write(out_log)
+                    sys.stdout.write(out_log + "\n")
 
                 sys.stdout.flush()
 
@@ -285,7 +285,7 @@ def predict(model, dataloder, steps, verbose=True):
                 if batch + 1 != steps:
                     sys.stdout.write(out_log + "\r")
                 else:
-                    sys.stdout.write(out_log)
+                    sys.stdout.write(out_log + "\n")
 
                 sys.stdout.flush()
 
