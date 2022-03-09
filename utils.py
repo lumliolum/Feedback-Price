@@ -28,7 +28,7 @@ def return_texts(directory):
     n_jobs = cpu_count()
     parallel = Parallel(n_jobs=n_jobs, backend="multiprocessing")
     results = parallel(delayed(read_file)(directory, filename) \
-                       for filename in tqdm.tqdm(os.listdir(directory)[:500]))
+                       for filename in tqdm.tqdm(os.listdir(directory)))
     for result in results:
         texts[result[0]] = result[1]
 
