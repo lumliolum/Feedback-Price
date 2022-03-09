@@ -146,6 +146,40 @@ def calculate_loss(loss_fn, logits, targets):
     return loss
 
 
+# function to return merged ground truth and prediction for batch
+def merge_prediction(ids, logits):
+    assert len(ids) == len(logits)
+    # logits will be of shape (batch_size, seq_len, num_classes)
+    # logits will have gradient.
+    logits = logits.detach().cpu().numpy()
+    # dictionary with id as the key
+    pred = {}
+    for index, chunk in enumerate(logits):
+        # chunk will of shape (seq_len, num_classes)
+        if ids[index] in pred:
+            pred[ids[index]] = np.hstack((pred[ids[index]], chunk))
+        else:
+            pred[ids[index]] = chunk
+
+    return pred
+
+
+def merge_ground_truth(ids, tags):
+    # tags will be of shape (batch_size, seq_len)
+    assert len(ids) == len(logits)
+    tags = tags.cpu().numpy()
+    # dictionary with id as the key
+    true = {}
+    for index, chunk in enumerate(tags):
+        # chunk will of shape (seq_len, )
+        if idx[index] in true:
+            true[ids[index]] = np.concatenate((true[idx[index]], chunk))
+        else:
+            true[ids[index]] = chunk
+
+    return true
+
+
 # function for running one pass in dataloder
 # steps argument is used only for logging
 def train(model, loss_fn, optimizer, scheduler, dataloder, device, steps=None, verbose=True):
@@ -185,17 +219,18 @@ def train(model, loss_fn, optimizer, scheduler, dataloder, device, steps=None, v
     return train_loss.value
 
 
-def evalute(model, loss_fn, dataloder, device, steps=None, verbose=True):
+def evaluate(model, loss_fn, dataloder, device, steps=None, verbose=True):
     if steps is None:
         # this will give number of steps
         steps = len(dataloder)
 
-    true, preds = None, None
+    true, preds = {}, {}
     val_loss = MovingAverage(name="val_loss")
 
     model.eval()
     with torch.no_grad():
         for batch, inputs in enumerate(dataloder):
+            ids = inputs["ids"]
             input_ids = inputs["input_ids"].long().to(device)
             attention_mask = inputs["attention_mask"].long().to(device)
             target = inputs["tags"].long().to(device)
@@ -208,15 +243,8 @@ def evalute(model, loss_fn, dataloder, device, steps=None, verbose=True):
 
             # now save ground truth and prediction
             # if you want save more.
-            if true is None:
-                true = target.cpu().numpy()
-            else:
-                true = np.vstack((true, target.cpu().numpy()))
-            
-            if preds is None:
-                preds = logits.cpu().numpy()
-            else:
-                preds = np.vstack((preds, logits.cpu().numpy()))
+            preds = {**preds, **merge_prediction(ids, logits)}
+            true = {**true, **merge_ground_truth(ids, target)}
 
             if verbose:
                 out_log = "{}/{} {} = {}".format(batch + 1, steps, val_loss.name, val_loss.value)
@@ -231,20 +259,18 @@ def predict(model, dataloder, steps, verbose=True):
     if steps is None:
         steps = len(dataloder)
 
-    preds = None
+    preds = {}
 
     model.eval()
     with torch.no_grad():
         for batch, inputs in enumerate(dataloader):
+            ids = inputs["ids"]
             input_ids = inputs["input_ids"].long().to(device)
             attention_mask = inputs["attention_mask"].long().to(device)
             # output from linear layer
             logits = model.forward(input_ids, attention_mask)
 
-            if preds is None:
-                preds = logits.cpu().numpy()
-            else:
-                preds = np.vstack((preds, logits.cpu().numpy()))
+            preds = {**preds, **merge_prediction(ids, logits)}
 
             if verbose:
                 out_log = "{}/{}".format(batch + 1, steps)
