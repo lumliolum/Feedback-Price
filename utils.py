@@ -166,7 +166,7 @@ def merge_prediction(ids, logits):
 
 def merge_ground_truth(ids, tags):
     # tags will be of shape (batch_size, seq_len)
-    assert len(ids) == len(logits)
+    assert len(ids) == len(tags)
     tags = tags.cpu().numpy()
     # dictionary with id as the key
     true = {}
@@ -212,7 +212,11 @@ def train(model, loss_fn, optimizer, scheduler, dataloder, device, steps=None, v
         # if verbose, then print to sys.stdout
         if verbose:
             out_log = "{}/{} {} = {}".format(batch + 1, steps, train_loss.name, train_loss.value)
-            sys.stdout.write(out_log + "\r")
+            if batch + 1 == steps:
+                sys.stdout.write(out_log + "\r")
+            else:
+                sys.stdout.write(out_log)
+
             sys.stdout.flush()
 
     # return the final loss value
@@ -248,7 +252,11 @@ def evaluate(model, loss_fn, dataloder, device, steps=None, verbose=True):
 
             if verbose:
                 out_log = "{}/{} {} = {}".format(batch + 1, steps, val_loss.name, val_loss.value)
-                sys.stdout.write(out_log + "\r")
+                if batch + 1 == steps:
+                    sys.stdout.write(out_log + "\r")
+                else:
+                    sys.stdout.write(out_log)
+
                 sys.stdout.flush()
 
     # loss, prediction and ground truth
@@ -274,7 +282,11 @@ def predict(model, dataloder, steps, verbose=True):
 
             if verbose:
                 out_log = "{}/{}".format(batch + 1, steps)
-                sys.stdout.write(out_log + "\r")
+                if batch + 1 == steps:
+                    sys.stdout.write(out_log + "\r")
+                else:
+                    sys.stdout.write(out_log)
+
                 sys.stdout.flush()
 
     return preds
