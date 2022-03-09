@@ -172,8 +172,8 @@ def merge_ground_truth(ids, tags):
     true = {}
     for index, chunk in enumerate(tags):
         # chunk will of shape (seq_len, )
-        if idx[index] in true:
-            true[ids[index]] = np.concatenate((true[idx[index]], chunk))
+        if ids[index] in true:
+            true[ids[index]] = np.concatenate((true[ids[index]], chunk))
         else:
             true[ids[index]] = chunk
 
@@ -212,7 +212,7 @@ def train(model, loss_fn, optimizer, scheduler, dataloder, device, steps=None, v
         # if verbose, then print to sys.stdout
         if verbose:
             out_log = "{}/{} {} = {}".format(batch + 1, steps, train_loss.name, train_loss.value)
-            if batch + 1 == steps:
+            if batch + 1 != steps:
                 sys.stdout.write(out_log + "\r")
             else:
                 sys.stdout.write(out_log)
@@ -252,7 +252,7 @@ def evaluate(model, loss_fn, dataloder, device, steps=None, verbose=True):
 
             if verbose:
                 out_log = "{}/{} {} = {}".format(batch + 1, steps, val_loss.name, val_loss.value)
-                if batch + 1 == steps:
+                if batch + 1 != steps:
                     sys.stdout.write(out_log + "\r")
                 else:
                     sys.stdout.write(out_log)
@@ -282,7 +282,7 @@ def predict(model, dataloder, steps, verbose=True):
 
             if verbose:
                 out_log = "{}/{}".format(batch + 1, steps)
-                if batch + 1 == steps:
+                if batch + 1 != steps:
                     sys.stdout.write(out_log + "\r")
                 else:
                     sys.stdout.write(out_log)
