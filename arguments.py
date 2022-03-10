@@ -40,6 +40,12 @@ def create_arguments():
         help="Batch size for training"
     )
     parser.add_argument(
+        "--gradient_accumulation_steps",
+        type=int,
+        required=True,
+        help="Gradient accumulation steps to use. if you dont want to use, make the value to 1"
+    )
+    parser.add_argument(
         "--max_learning_rate",
         type=float,
         required=True,

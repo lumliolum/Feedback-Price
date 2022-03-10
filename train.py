@@ -139,8 +139,8 @@ def main(args):
     )
 
     # calcuation of steps and warmup steps
-    train_steps_per_epoch = int(np.ceil(train_size / args.batch_size))
-    val_steps_per_epoch = int(np.ceil(val_size / args.batch_size))
+    train_steps_per_epoch = int(np.ceil(train_size / (args.batch_size * args.gradient_accumulation_steps)))
+    val_steps_per_epoch = int(np.ceil(val_size / (args.batch_size * args.gradient_accumulation_steps)))
     total_steps = train_steps_per_epoch * args.epochs
     warmup_steps = int(args.warmup_ratio * total_steps)
 

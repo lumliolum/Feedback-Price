@@ -182,7 +182,7 @@ def merge_ground_truth(ids, tags):
 
 # function for running one pass in dataloder
 # steps argument is used only for logging
-def train(model, loss_fn, optimizer, scheduler, dataloder, device, steps=None, verbose=True):
+def train(model, loss_fn, optimizer, scheduler, dataloder, device, gradient_accumulation_steps=1, steps=None, verbose=True):
     if steps is None:
         # this will give the number of steps
         steps = len(dataloder)
@@ -201,10 +201,11 @@ def train(model, loss_fn, optimizer, scheduler, dataloder, device, steps=None, v
         loss = calculate_loss(loss_fn, logits, target)
         loss.backward()
 
-        optimizer.step()
-        optimizer.zero_grad()
+        if (batch + 1) % gradient_accumulation_steps == 0:
+            optimizer.step()
+            optimizer.zero_grad()
 
-        scheduler.step()
+            scheduler.step()
 
         # update the moving average
         train_loss.update(loss.item())
