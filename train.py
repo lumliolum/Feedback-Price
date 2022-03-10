@@ -202,6 +202,7 @@ def main(args):
             scheduler=scheduler,
             dataloder=train_loader,
             device=device,
+            gradient_accumulation_steps=args.gradient_accumulation_steps,
             steps=train_steps_per_epoch,
             verbose=True
         )
