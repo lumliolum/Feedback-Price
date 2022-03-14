@@ -205,7 +205,7 @@ def train(model, loss_fn, optimizer, scheduler, dataloder, device, gradient_accu
             optimizer.step()
             optimizer.zero_grad()
 
-            scheduler.step()
+            # scheduler.step()
 
         # update the moving average
         train_loss.update(loss.item())
