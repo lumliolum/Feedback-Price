@@ -49,7 +49,16 @@ def create_arguments():
         "--max_learning_rate",
         type=float,
         required=True,
-        help="Maximum learning rate for adam(default) optimizer. Initial learning rate will be calculated according to warmup_ratio parameter"
+        help="Maximum learning rate for adam(default) optimizer. Initial learning \
+            rate will be calculated according to warmup_ratio parameter \
+            if use scheduler flag is true. If the flag is false, then this will \
+            be initial learning rate"
+    )
+    parser.add_argument(
+        "--use_scheduler",
+        type=bool,
+        required=True,
+        help="Flag to use scheduler or not. If true then use scheduler"
     )
     parser.add_argument(
         "--warmup_ratio",

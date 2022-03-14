@@ -6,4 +6,5 @@ python train.py \
     --epochs 5 \
     --batch_size 8 \
     --max_learning_rate 1e-4 \
+    --use_scheduler true \
     --warmup_ratio 0.2 \

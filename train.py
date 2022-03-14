@@ -149,7 +149,11 @@ def main(args):
     logger.success("Total steps = {}".format(total_steps))
     logger.success("Warmpup steps = {}".format(warmup_steps))
     # calculate initial learning rate.
-    args.inital_learning_rate = args.max_learning_rate / warmup_steps
+    if args.use_scheduler:
+        args.inital_learning_rate = args.max_learning_rate / warmup_steps
+    else:
+        args.initial_learning_rate = args.max_learning_rate
+
     logger.success("Initial Learning rate = {}".format(args.inital_learning_rate))
 
     # optimizer
@@ -176,7 +180,7 @@ def main(args):
     # source code : https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#LambdaLR
     # scheduler will have method called scheduler.get_lr which will give the last calculated lr
     # this can be used to log the learning rate.
-    logger.success("Initializing the scheduler")
+    logger.success("Initializing the scheduler (this will happen even though scheduler flag is false)")
     scheduler = optim.lr_scheduler.LambdaLR(
         optimizer,
         lambda step: min((warmup_steps**2)/(step + 1), (step + 1)),
@@ -204,6 +208,7 @@ def main(args):
             device=device,
             gradient_accumulation_steps=args.gradient_accumulation_steps,
             steps=train_steps_per_epoch,
+            use_scheduler=args.use_scheduler,
             verbose=True
         )
 
