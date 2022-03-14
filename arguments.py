@@ -56,7 +56,7 @@ def create_arguments():
     )
     parser.add_argument(
         "--use_scheduler",
-        type=bool,
+        type=int,
         required=True,
         help="Flag to use scheduler or not. If true then use scheduler"
     )
