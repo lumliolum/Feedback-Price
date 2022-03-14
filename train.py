@@ -150,15 +150,15 @@ def main(args):
     logger.success("Warmpup steps = {}".format(warmup_steps))
     # calculate initial learning rate.
     if args.use_scheduler:
-        args.inital_learning_rate = args.max_learning_rate / warmup_steps
+        args.initial_learning_rate = args.max_learning_rate / warmup_steps
     else:
         args.initial_learning_rate = args.max_learning_rate
 
-    logger.success("Initial Learning rate = {}".format(args.inital_learning_rate))
+    logger.success("Initial Learning rate = {}".format(args.initial_learning_rate))
 
     # optimizer
     logger.success("Initializing the optimizer")
-    optimizer = optim.Adam(model.parameters(), lr=args.inital_learning_rate, betas=(0.9, 0.98), eps=1e-9)
+    optimizer = optim.Adam(model.parameters(), lr=args.initial_learning_rate, betas=(0.9, 0.98), eps=1e-9)
     optimizer.zero_grad()
 
     # scheduler
