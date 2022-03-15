@@ -1,4 +1,5 @@
 import os
+import json
 import torch
 import datetime
 import numpy as np
@@ -17,7 +18,7 @@ from collator import Collator
 
 
 def test_tokenization(tokenizer):
-    logger.success("Running the test tokenization function")
+    logger.debug("Running the test tokenization function")
     # this function is written to test on small input string
     # how the tokenization and bies tags are generated
     # this is what I will do for every sample in the directory.
@@ -26,14 +27,14 @@ def test_tokenization(tokenizer):
     sentence = "Hello worldy people ok you know what! of coursey"
     tags = ["O", "L", "C", "C", "C", "C", "O", "M", "L"]
 
-    logger.success("Running the tokenize to see the output tokens")
-    logger.success("Tokens = {}".format(tokenizer.tokenize(sentence)))
+    logger.debug("Running the tokenize to see the output tokens")
+    logger.debug("Tokens = {}".format(tokenizer.tokenize(sentence)))
 
     # this is main function where I am converting the sentence to ids, and aligning the
     # tags to bies schema.
     tokenized_sentence, bies_tags = utils.tokenize(sentence, tags, tokenizer)
-    logger.success("Tokenized sentence = {}".format(tokenized_sentence))
-    logger.success("Bies tags = {}".format(bies_tags))
+    logger.debug("Tokenized sentence = {}".format(tokenized_sentence))
+    logger.debug("Bies tags = {}".format(bies_tags))
 
 
 def main(args):
@@ -59,45 +60,45 @@ def main(args):
 
     label2idx = {label: index for index, label in enumerate(labels)}
     idx2label = {index: label for index, label in enumerate(labels)}
-    logger.success("Number of labels = {}".format(len(labels)))
-    logger.success("Label to index = {}".format(label2idx))
+    logger.info("Number of labels = {}".format(len(labels)))
+    logger.info("Label to index = {}".format(label2idx))
 
     # read the directory
-    logger.success("Reading the files from {} directory".format(args.train_dir))
+    logger.info("Reading the files from {} directory".format(args.train_dir))
     texts = utils.return_texts(args.train_dir)
     num_documents = len(os.listdir(args.train_dir))
 
-    logger.success("Number of documents found in directory = {}".format(num_documents))
-    logger.success("Combining the read files with ground truth from csv")
+    logger.info("Number of documents found in directory = {}".format(num_documents))
+    logger.info("Combining the read files with ground truth from csv")
     texts_mapping = utils.return_texts_mapping(texts, df)
 
     # initialize the tokenizer
     # add_prefix_space is false by default
-    logger.success("Initializing the {} tokenizer".format(args.model_name_or_path))
+    logger.info("Initializing the {} tokenizer".format(args.model_name_or_path))
     tokenizer = RobertaTokenizerFast.from_pretrained(
         args.model_name_or_path,
         add_prefix_space=False
     )
-    logger.success("Special tokens")
-    logger.success(dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids)))
+    logger.info("Special tokens")
+    logger.info(dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids)))
 
     # run the test tokenization function
     test_tokenization(tokenizer)
 
     # convert the texts to ids and also align the tags with bies schema
     # remember that all the data is loaded here only
-    logger.success("Running tokenizer on all inputs.")
+    logger.info("Running tokenizer on all inputs.")
     inputs = utils.prepare_inputs(texts, texts_mapping, tokenizer)
 
     # load the pretrained model
-    logger.success("Initializing the config")
+    logger.info("Initializing the config")
     roberta_config = RobertaConfig.from_pretrained(args.model_name_or_path)
     # set in roberta config to output hidden states
     roberta_config.output_hidden_states = True
-    logger.success("Initializing the {} as base model".format(args.model_name_or_path))
+    logger.info("Initializing the {} as base model".format(args.model_name_or_path))
     # while using like this, the model is set in evaluation by default.
     roberta_model = RobertaModel.from_pretrained(args.model_name_or_path, config=roberta_config)
-    logger.success("Initializing the finetuing model using base model")
+    logger.info("Initializing the finetuing model using base model")
     model = FeedbackPriceModel(roberta_config, roberta_model, len(label2idx))
     model.to(device)
     logger.success("Model Initialization completed")
@@ -144,20 +145,20 @@ def main(args):
     total_steps = train_steps_per_epoch * args.epochs
     warmup_steps = int(args.warmup_ratio * total_steps)
 
-    logger.success("Train Steps per epoch = {}".format(train_steps_per_epoch))
-    logger.success("Val Steps per epoch = {}".format(val_steps_per_epoch))
-    logger.success("Total steps = {}".format(total_steps))
-    logger.success("Warmpup steps = {}".format(warmup_steps))
+    logger.info("Train Steps per epoch = {}".format(train_steps_per_epoch))
+    logger.info("Val Steps per epoch = {}".format(val_steps_per_epoch))
+    logger.info("Total steps = {}".format(total_steps))
+    logger.info("Warmpup steps = {}".format(warmup_steps))
     # calculate initial learning rate.
     if args.use_scheduler:
         args.initial_learning_rate = args.max_learning_rate / warmup_steps
     else:
         args.initial_learning_rate = args.max_learning_rate
 
-    logger.success("Initial Learning rate = {}".format(args.initial_learning_rate))
+    logger.info("Initial Learning rate = {}".format(args.initial_learning_rate))
 
     # optimizer
-    logger.success("Initializing the optimizer")
+    logger.info("Initializing the optimizer")
     optimizer = optim.Adam(model.parameters(), lr=args.initial_learning_rate, betas=(0.9, 0.98), eps=1e-9)
     optimizer.zero_grad()
 
@@ -193,6 +194,7 @@ def main(args):
     loss_fn = nn.CrossEntropyLoss(ignore_index=-100)
 
     # training
+    best_loss = +np.inf
     for epoch in range(args.epochs):
         logger.success("*"*60)
         logger.success("{}/{}".format(epoch + 1, args.epochs))
@@ -221,9 +223,28 @@ def main(args):
             steps=val_steps_per_epoch,
             verbose=True
         )
+        if val_loss < best_loss:
+            logger.success("Validation loss decreased from {} to {}".format(best_loss, val_loss))
+            logger.success("Saving the model at {}".format(args.output_dir))
+            torch.save(model.state_dict(), os.path.join(args.output_dir, "model.bin"))
+            torch.save(optimizer.state_dict(), os.path.join(args.output_dir, "optimizer.bin"))
+
         t2 = datetime.datetime.now()
         timetaken = round((t2 - t1).total_seconds())
         logger.success("time: {}, loss: {}, val loss: {}".format(timetaken, train_loss, val_loss))
+
+    logger.success("Training Completed. Saving tokenizer, model configurations and arguments in {}".format(args.output_dir))
+    roberta_config.label2idx = label2idx
+
+    with open(os.path.join(args.output_dir, "config.json"), "w") as f:
+        json.dump(roberta_config.to_dict(), f)
+
+    tokenizer.save(os.path.join(args.output_dir, "tokenizer.json"))
+
+    with open(os.path.join(args.output_dir, "args.json"), "w") as f:
+        json.dump(vars(args), f)
+
+    logger.success("Completed")
 
 
 if __name__ == "__main__":
@@ -235,4 +256,5 @@ if __name__ == "__main__":
     parser = arguments.create_arguments()
     args = parser.parse_args()
     logger.success("Parsed Arguments = {}".format(args))
+    os.makedirs(args.output_dir, exist_ok=True)
     main(args)

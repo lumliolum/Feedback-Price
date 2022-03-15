@@ -57,8 +57,8 @@ def create_arguments():
     parser.add_argument(
         "--use_scheduler",
         type=int,
-        required=True,
-        help="Flag to use scheduler or not. If true then use scheduler"
+        default=0,
+        help="Flag to use scheduler or not. If 1 then use scheduler"
     )
     parser.add_argument(
         "--warmup_ratio",
@@ -66,5 +66,10 @@ def create_arguments():
         required=True,
         help="Ratio of total steps for warmup. If value is 0.2 and total steps is 100, then first 0.2*100 = 20 will be used for warmup"
     )
-
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        required=True,
+        help="path to output directory. if directory doesn't exist then code will create the directory"
+    )
     return parser
