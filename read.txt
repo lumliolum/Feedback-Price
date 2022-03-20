@@ -1,7 +1,10 @@
 In roberta base, when pad the tokens with <pad_token>, position embeddings where pad happened will not be considered by the model.
 That is if you see https://pytorch.org/docs/stable/generated/torch.nn.Embedding.html,
 roberta initializes position embeddings also with padding_idx = 1, that is so these embeddings will not contribute.
-See this from transformers implementation : 
-1) https://github.com/huggingface/transformers/blob/master/src/transformers/models/roberta/modeling_roberta.py#L78
-2) https://github.com/huggingface/transformers/blob/master/src/transformers/models/roberta/modeling_roberta.py#L98-L100
+See this from transformers implementation : 1 -> word embeddings and 2-> position embeddings
+1) https://github.com/huggingface/transformers/blob/277fc2cc782d8c5c28ec399b1ee2fc1c6aed7b6e/src/transformers/models/roberta/modeling_roberta.py#L79
+2) https://github.com/huggingface/transformers/blob/277fc2cc782d8c5c28ec399b1ee2fc1c6aed7b6e/src/transformers/models/roberta/modeling_roberta.py#L97-L101
 
+
+Mean while in bert they are not initialized (I mean position embeddings) with padding_idx. See here
+1) https://github.com/huggingface/transformers/blob/277fc2cc782d8c5c28ec399b1ee2fc1c6aed7b6e/src/transformers/models/bert/modeling_bert.py#L171-L173

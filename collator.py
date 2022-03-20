@@ -35,11 +35,22 @@ class Collator:
         # inputs will be list where each element is output of
         # dataset.__getitem__[index] which in our case
         # is dict with keys as id, input_ids, mask and tags and schema_tags.
+        # see dataset.py for more details
+
+        # for test data (which will go through same collator function)
+        # is dict with keys only as id and input_ids. To make the code
+        # work I will tags and schema_tags (which will be dummy in case of test data)
+        for inp in inputs:
+            length = len(inp["id"])
+            if "tags" not in inp:
+                inp["tags"] = ["dummy"]*length
+            if "schema_tags" not in inp:
+                inp["schema_tags"] = [-1]*length
 
         # first calculate the max len in the batch
         maxlen = -1
         for inp in inputs:
-            maxlen = max(maxlen, len(inp["tags"]))
+            maxlen = max(maxlen, len(inp["id"]))
 
         ids = []
         input_ids = []

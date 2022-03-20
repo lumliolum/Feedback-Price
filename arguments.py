@@ -16,6 +16,12 @@ def create_arguments():
         help="Path to train csv path containing the tags"
     )
     parser.add_argument(
+        "--test_dir",
+        type=str,
+        default=None,
+        help="path to test directory containing text files for which prediction will be run"
+    )
+    parser.add_argument(
         "--model_name_or_path",
         type=str,
         required=True,
@@ -42,7 +48,7 @@ def create_arguments():
     parser.add_argument(
         "--gradient_accumulation_steps",
         type=int,
-        required=True,
+        default=1,
         help="Gradient accumulation steps to use. if you dont want to use, make the value to 1"
     )
     parser.add_argument(
@@ -51,7 +57,7 @@ def create_arguments():
         required=True,
         help="Maximum learning rate for adam(default) optimizer. Initial learning \
             rate will be calculated according to warmup_ratio parameter \
-            if use scheduler flag is true. If the flag is false, then this will \
+            if use scheduler flag is 1. If the flag is 0, then this will \
             be initial learning rate"
     )
     parser.add_argument(
@@ -63,7 +69,7 @@ def create_arguments():
     parser.add_argument(
         "--warmup_ratio",
         type=float,
-        required=True,
+        default=0.1,
         help="Ratio of total steps for warmup. If value is 0.2 and total steps is 100, then first 0.2*100 = 20 will be used for warmup"
     )
     parser.add_argument(
@@ -73,3 +79,9 @@ def create_arguments():
         help="path to output directory. if directory doesn't exist then code will create the directory"
     )
     return parser
+
+
+if __name__ == "__main__":
+    parser = create_arguments()
+    args = parser.parse_args()
+    print(vars(args))

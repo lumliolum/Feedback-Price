@@ -12,8 +12,8 @@ from transformers import RobertaConfig, RobertaTokenizerFast, RobertaModel
 
 import utils
 import arguments
+import dataset as ds
 from models import FeedbackPriceModel
-from dataset import FeedbackPriceDataset
 from collator import Collator
 
 
@@ -32,7 +32,7 @@ def test_tokenization(tokenizer):
 
     # this is main function where I am converting the sentence to ids, and aligning the
     # tags to bies schema.
-    tokenized_sentence, bies_tags = utils.tokenize(sentence, tags, tokenizer)
+    tokenized_sentence, bies_tags = ds.tokenize(sentence, tags, tokenizer)
     logger.debug("Tokenized sentence = {}".format(tokenized_sentence))
     logger.debug("Bies tags = {}".format(bies_tags))
 
@@ -41,7 +41,7 @@ def main(args):
     # find the device and set the seed
     seed = 33
     if torch.cuda.is_available():
-        device = torch.device("cuda")
+        device = torch.device("cuda:0")
     else:
         device = torch.device("cpu")
 
@@ -63,15 +63,6 @@ def main(args):
     logger.info("Number of labels = {}".format(len(labels)))
     logger.info("Label to index = {}".format(label2idx))
 
-    # read the directory
-    logger.info("Reading the files from {} directory".format(args.train_dir))
-    texts = utils.return_texts(args.train_dir)
-    num_documents = len(os.listdir(args.train_dir))
-
-    logger.info("Number of documents found in directory = {}".format(num_documents))
-    logger.info("Combining the read files with ground truth from csv")
-    texts_mapping = utils.return_texts_mapping(texts, df)
-
     # initialize the tokenizer
     # add_prefix_space is false by default
     logger.info("Initializing the {} tokenizer".format(args.model_name_or_path))
@@ -85,13 +76,11 @@ def main(args):
     # run the test tokenization function
     test_tokenization(tokenizer)
 
-    # convert the texts to ids and also align the tags with bies schema
-    # remember that all the data is loaded here only
-    logger.info("Running tokenizer on all inputs.")
-    inputs = utils.prepare_inputs(texts, texts_mapping, tokenizer)
+    # read the directory
+    inputs = ds.prepare_inputs(args.train_dir, tokenizer, df)
 
     # load the pretrained model
-    logger.info("Initializing the config")
+    logger.info("Initializing the config for {}".format(args.model_name_or_path))
     roberta_config = RobertaConfig.from_pretrained(args.model_name_or_path)
     # set in roberta config to output hidden states
     roberta_config.output_hidden_states = True
@@ -170,7 +159,7 @@ def main(args):
     """
     This is how psudecode looks for lambda lr step method
     # inputs is base_lr, lambda_fn, last_epoch
-    def step():
+    def step(last_epoch=-1):
         last_epoch += 1
         multiply = lambda_fn(last_epoch)
         lr = base_lr*multiply
@@ -181,13 +170,16 @@ def main(args):
     # source code : https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#LambdaLR
     # scheduler will have method called scheduler.get_lr which will give the last calculated lr
     # this can be used to log the learning rate.
-    logger.success("Initializing the scheduler (this will happen even though scheduler flag is false)")
-    scheduler = optim.lr_scheduler.LambdaLR(
-        optimizer,
-        lambda step: min((warmup_steps**2)/(step + 1), (step + 1)),
-        last_epoch=-1,
-        verbose=False
-    )
+    if args.use_scheduler:
+        logger.success("Initializing the scheduler")
+        scheduler = optim.lr_scheduler.LambdaLR(
+            optimizer,
+            lambda step: min((warmup_steps**2)/(step + 1), (step + 1)),
+            last_epoch=-1,
+            verbose=False
+        )
+    else:
+        scheduler = None
 
     # loss function
     # -100 is the default value
@@ -228,6 +220,9 @@ def main(args):
             logger.success("Saving the model at {}".format(args.output_dir))
             torch.save(model.state_dict(), os.path.join(args.output_dir, "model.bin"))
             torch.save(optimizer.state_dict(), os.path.join(args.output_dir, "optimizer.bin"))
+            # save scheduler only if scheduler is used.
+            if args.use_scheduler:
+                torch.save(scheduler.state_dict(), os.path.join(args.output_dir, "scheduler.bin"))
 
         t2 = datetime.datetime.now()
         timetaken = round((t2 - t1).total_seconds())
@@ -239,12 +234,49 @@ def main(args):
     with open(os.path.join(args.output_dir, "config.json"), "w") as f:
         json.dump(roberta_config.to_dict(), f)
 
-    tokenizer.save(os.path.join(args.output_dir, "tokenizer.json"))
+    # save only in fast tokenizer mode.
+    tokenizer.save_pretrained(os.path.join(args.output_dir, "tokenizer"), legacy_format=False)
 
     with open(os.path.join(args.output_dir, "args.json"), "w") as f:
         json.dump(vars(args), f)
 
-    logger.success("Completed")
+    logger.success("Saving files completed")
+
+    if args.test_dir:
+        logger.info("Reading the files from {} directory".format(args.test_dir))
+        test_inputs = ds.prepare_inputs_for_test(args.test_dir, tokenizer)
+        test_ids = list(test_texts.keys())
+
+        test_dataset = ds.FeedbackPriceTestDataset(test_ids, test_inputs)
+        test_loader = DataLoader(
+            test_dataset,
+            batch_size=args.batch_size,
+            shuffle=False,
+            collator=collator.collate_fn
+        )
+        test_steps_per_epoch = len(test_loader)
+        # loading the saved model
+        model = FeedbackPriceModel(roberta_config, roberta_model, num_classes)
+        # load it to device first and then load state dict or change location in torch.load
+        model.to(device)
+        model.load_state_dict(torch.load(os.path.join(args.output_dir, "model.bin")))
+
+
+        logger.success("Starting the prediction on test data")
+        t1 = datetime.datetime.now()
+        test_preds = utils.predict(
+            model,
+            test_loader,
+            test_steps_per_epoch,
+            verbose=True
+        )
+        t2 = datetime.datetime.now()
+        timetaken = round((t2 - t1).total_seconds())
+        logger.info("Time taken for predictions to completed is = {}".format(timetaken))
+        logger.info("Saving predictions in {}".format(args.output_dir))
+        with open("test_predictions.json", "w") as f:
+            json.dump(test_preds, f)
+        logger.success("Completed")
 
 
 if __name__ == "__main__":
