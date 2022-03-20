@@ -110,8 +110,8 @@ def main(args):
     logger.success("Validation size = {}".format(val_size))
 
     # initialize the ids
-    train_dataset = FeedbackPriceDataset(train_ids, inputs, label2idx)
-    val_dataset = FeedbackPriceDataset(val_ids, inputs, label2idx)
+    train_dataset = ds.FeedbackPriceDataset(train_ids, inputs, label2idx)
+    val_dataset = ds.FeedbackPriceDataset(val_ids, inputs, label2idx)
 
     # collator and dataloader.
     collator = Collator(tokenizer, args.max_len)
