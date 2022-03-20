@@ -254,7 +254,7 @@ def main(args):
             test_dataset,
             batch_size=args.batch_size,
             shuffle=False,
-            collator=collator.collate_fn
+            collate_fn=collator.collate_fn
         )
         test_steps_per_epoch = len(test_loader)
         # loading the saved model
