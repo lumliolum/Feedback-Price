@@ -258,7 +258,7 @@ def main(args):
         )
         test_steps_per_epoch = len(test_loader)
         # loading the saved model
-        model = FeedbackPriceModel(roberta_config, roberta_model, num_classes)
+        model = FeedbackPriceModel(roberta_config, roberta_model, len(label2idx))
         # load it to device first and then load state dict or change location in torch.load
         model.to(device)
         model.load_state_dict(torch.load(os.path.join(args.output_dir, "model.bin")))
