@@ -170,5 +170,6 @@ class FeedbackPriceTestDataset(Dataset):
         inp = self.inputs[self.ids[index]]
         return {
             "id": self.ids[index],
-            "input_ids": inp["tokens"]["input_ids"]
+            "input_ids": inp["tokens"]["input_ids"],
+            "attention_mask": inp["tokens"]["attention_mask"]
         }

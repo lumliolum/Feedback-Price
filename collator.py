@@ -38,7 +38,7 @@ class Collator:
         # see dataset.py for more details
 
         # for test data (which will go through same collator function)
-        # is dict with keys only as id and input_ids. To make the code
+        # is dict with keys only as id and input_ids, mask. To make the code
         # work I will tags and schema_tags (which will be dummy in case of test data)
         for inp in inputs:
             length = len(inp["input_ids"])
