@@ -17,7 +17,7 @@ def read_file(directory, filename):
 # return the id and text containing for a directory
 def return_texts(directory, use_workers=False):
     texts = {}
-    files = os.listdir(directory)[:100]
+    files = os.listdir(directory)
     if use_workers:
         n_jobs = cpu_count()
         parallel = Parallel(n_jobs=n_jobs, backend="multiprocessing")
