@@ -269,6 +269,7 @@ def main(args):
         test_preds = utils.predict(
             model=model,
             dataloader=test_loader,
+            device=device,
             steps=len(test_loader),
             verbose=True
         )

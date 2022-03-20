@@ -177,7 +177,7 @@ def evaluate(model, loss_fn, dataloder, device, steps=None, verbose=True):
     return val_loss.value, preds, true
 
 
-def predict(model, dataloader, steps, verbose=True):
+def predict(model, dataloader, device, steps=None, verbose=True):
     if steps is None:
         steps = len(dataloader)
 
