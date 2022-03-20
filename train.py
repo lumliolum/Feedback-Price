@@ -278,7 +278,7 @@ def main(args):
         logger.info("Saving predictions in {}".format(args.output_dir))
         # converting predictions to list to dump in json
         # as numpy array cannot be put in json
-        for key, value in test_preds:
+        for key, value in test_preds.items():
             preds[key] = list(value)
 
         with open("test_predictions.json", "w") as f:
