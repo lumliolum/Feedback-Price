@@ -43,9 +43,9 @@ class Collator:
         for inp in inputs:
             length = len(inp["input_ids"])
             if "tags" not in inp:
-                inp["tags"] = ["dummy"]*length
+                inp["tags"] = [-1]*length
             if "schema_tags" not in inp:
-                inp["schema_tags"] = [-1]*length
+                inp["schema_tags"] = ["dummy"]*length
 
         # first calculate the max len in the batch
         maxlen = -1
