@@ -263,7 +263,6 @@ def main(args):
         model.to(device)
         model.load_state_dict(torch.load(os.path.join(args.output_dir, "model.bin")))
 
-
         logger.success("Starting the prediction on test data")
         t1 = datetime.datetime.now()
         test_preds = utils.predict(
@@ -277,6 +276,11 @@ def main(args):
         timetaken = round((t2 - t1).total_seconds())
         logger.info("Time taken for predictions to completed is = {}".format(timetaken))
         logger.info("Saving predictions in {}".format(args.output_dir))
+        # converting predictions to list to dump in json
+        # as numpy array cannot be put in json
+        for key, value in preds:
+            preds[key] = list(value)
+
         with open("test_predictions.json", "w") as f:
             json.dump(test_preds, f)
         logger.success("Completed")
