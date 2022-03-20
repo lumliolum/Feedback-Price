@@ -32,7 +32,7 @@ def test_tokenization(tokenizer):
 
     # this is main function where I am converting the sentence to ids, and aligning the
     # tags to bies schema.
-    tokenized_sentence, bies_tags = ds.tokenize(sentence, tags, tokenizer)
+    tokenized_sentence, bies_tags = ds.tokenize(sentence, tokenizer, tags)
     logger.debug("Tokenized sentence = {}".format(tokenized_sentence))
     logger.debug("Bies tags = {}".format(bies_tags))
 
