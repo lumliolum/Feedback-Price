@@ -41,7 +41,7 @@ class Collator:
         # is dict with keys only as id and input_ids. To make the code
         # work I will tags and schema_tags (which will be dummy in case of test data)
         for inp in inputs:
-            length = len(inp["id"])
+            length = len(inp["input_ids"])
             if "tags" not in inp:
                 inp["tags"] = ["dummy"]*length
             if "schema_tags" not in inp:
@@ -50,7 +50,7 @@ class Collator:
         # first calculate the max len in the batch
         maxlen = -1
         for inp in inputs:
-            maxlen = max(maxlen, len(inp["id"]))
+            maxlen = max(maxlen, len(inp["input_ids"]))
 
         ids = []
         input_ids = []
