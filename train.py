@@ -129,6 +129,7 @@ def main(args):
     )
 
     # calcuation of steps and warmup steps
+    # note that this is not the total steps as I am including gradient accumulations
     train_steps_per_epoch = int(np.ceil(train_size / (args.batch_size * args.gradient_accumulation_steps)))
     val_steps_per_epoch = int(np.ceil(val_size / (args.batch_size * args.gradient_accumulation_steps)))
     total_steps = train_steps_per_epoch * args.epochs
@@ -201,7 +202,7 @@ def main(args):
             dataloder=train_loader,
             device=device,
             gradient_accumulation_steps=args.gradient_accumulation_steps,
-            steps=train_steps_per_epoch,
+            steps=len(train_loader),
             use_scheduler=args.use_scheduler,
             verbose=True
         )
@@ -212,7 +213,7 @@ def main(args):
             loss_fn=loss_fn,
             dataloder=val_loader,
             device=device,
-            steps=val_steps_per_epoch,
+            steps=len(val_loader),
             verbose=True
         )
         if val_loss < best_loss:
@@ -223,6 +224,7 @@ def main(args):
             # save scheduler only if scheduler is used.
             if args.use_scheduler:
                 torch.save(scheduler.state_dict(), os.path.join(args.output_dir, "scheduler.bin"))
+            best_loss = val_loss
 
         t2 = datetime.datetime.now()
         timetaken = round((t2 - t1).total_seconds())
@@ -245,7 +247,7 @@ def main(args):
     if args.test_dir:
         logger.info("Reading the files from {} directory".format(args.test_dir))
         test_inputs = ds.prepare_inputs_for_test(args.test_dir, tokenizer)
-        test_ids = list(test_texts.keys())
+        test_ids = list(test_inputs.keys())
 
         test_dataset = ds.FeedbackPriceTestDataset(test_ids, test_inputs)
         test_loader = DataLoader(
@@ -265,9 +267,9 @@ def main(args):
         logger.success("Starting the prediction on test data")
         t1 = datetime.datetime.now()
         test_preds = utils.predict(
-            model,
-            test_loader,
-            test_steps_per_epoch,
+            model=model,
+            dataloader=test_loader,
+            steps=len(test_loader),
             verbose=True
         )
         t2 = datetime.datetime.now()
