@@ -1,4 +1,4 @@
-python arguments.py \
+python train.py \
     --train_dir "../../input/feedback-prize-2021/train" \
     --train_csv_path "../../input/feedback-prize-2021/train.csv" \
     --test_dir "../../input/feedback-prize-2021/test" \
